@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.transfer;
+
+
+service TransferService {
+    rpc generateAuthInfo (GenerateAuthInfoRequest) returns (GenerateAuthInfoResponse) {}
+
+    rpc changeOwner (ChangeOwnerRequest) returns (ChangeOwnerResponse) {}
+
+    rpc changeRegistrar (ChangeRegistrarRequest) returns (ChangeRegistrarResponse) {}
+}
+
+message ChangeRegistrarRequest {}
+message ChangeRegistrarResponse {}
+
+message ChangeOwnerRequest {}
+message ChangeOwnerResponse {}
+
+message GenerateAuthInfoRequest {}
+message GenerateAuthInfoResponse {}

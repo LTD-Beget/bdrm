@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.domain;
+
+
+service DomainService {
+
+    rpc register (RegisterRequest) returns (RegisterResponse) {}
+
+    rpc declineRegister (DeclineRegisterRequest) returns (DeclineRegisterResponse) {}
+
+    rpc get (GetRequest) returns (GetResponse) {}
+
+    rpc delegate (DelegateRequest) returns (DelegateResponse) {}
+
+    rpc renew (RenewRequest) returns (RenewResponse) {}
+
+    rpc autoRenew (AutoRenewRequest) returns (AutoRenewResponse) {}
+
+    rpc orderCertificate (OrderCertificateRequest) returns (OrderCertificateResponse) {}
+
+    rpc orderVoucher (OrderVoucherRequest) returns (OrderVoucherResponse) {}
+}
+
+message RegisterRequest {}
+message RegisterResponse {}
+
+message DeclineRegisterRequest {}
+message DeclineRegisterResponse {}
+
+message GetRequest {}
+message GetResponse {}
+
+message DelegateRequest {}
+message DelegateResponse {}
+
+message RenewRequest {}
+message RenewResponse {}
+
+
+message AutoRenewRequest {}
+message AutoRenewResponse {}
+
+
+message OrderVoucherRequest {}
+message OrderVoucherResponse {}
+
+message OrderCertificateRequest {}
+message OrderCertificateResponse {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

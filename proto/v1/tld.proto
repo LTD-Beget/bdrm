@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.tld;
+
+
+service TldService {
+    rpc get(GetRequest) returns (GetResponce)
+}
+
+message GetRequest {}
+message GetResponce {}
