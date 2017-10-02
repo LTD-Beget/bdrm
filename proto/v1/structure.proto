@@ -1,0 +1,618 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.structure;
+
+import "google/protobuf/timestamp.proto";
+
+message Domain {
+    string fqdn = 1;
+    string registrar = 2;
+    google.protobuf.Timestamp registered = 3;
+    google.protobuf.Timestamp expired = 4;
+    repeated beget.bdrm.v1.structure.AuthoritativeNameServer authoritative_name_server = 5;
+    Administrator administrator = 6;
+    bool is_verified = 7;
+    bool auto_renew = 8;
+    repeated ActiveOperation active_operation = 9;
+
+    enum ActiveOperation {
+        PENDING_REGISTER = 0;
+        PENDING_RENEW = 1;
+        CHANGING_REGISTRAR_IN_PROGRESS = 2;
+        CHANGING_OWNER_IN_PROGRESS = 3;
+    }
+}
+
+message AuthoritativeNameServer {
+    oneof name_server {
+        string fqdn = 1;
+        SubordinateNameServer subordinate_name_server = 2;
+    }
+
+    message SubordinateNameServer {
+        string fqdn = 1;
+        oneof address {
+            string ipv4 = 2;
+            string ipv6 = 3;
+        }
+    }
+}
+
+message Administrator {
+    oneof type {
+        PhysicalPerson physical_person = 1;
+        LegalEntity legal_entity = 2;
+    }
+
+    message PhysicalPerson {
+        string full_name = 1;
+        IdentityDocument identity_document = 2;
+        string taxpayer_number = 3;
+        Date birthday = 4;
+        CountryCode resident_country_code = 5;
+        Contacts contacts = 6;
+
+        message IdentityDocument {
+            CountryCode issue_country = 1;
+            string identifier = 2;
+            Date issue_date = 3;
+            string additional_info = 4;
+        }
+    }
+
+    message LegalEntity {
+        string full_name = 1;
+        string international_full_name = 2;
+        string taxpayer_number = 3;
+        Address legal_address = 4;
+        CountryCode resident_country_code = 5;
+        Contacts contacts = 6;
+    }
+
+    message Contacts {
+        Address post_address = 1;
+        Phone administrative_phone = 2;
+        string administrative_email = 3;
+    }
+
+    message Address {
+        string postal_code = 1;
+        CountryCode country_code = 2;
+        string area = 3; // State or province or state.
+        string locality = 4; // City or settlement
+        string additional_info = 5; // Additional information about the address of residence, street and building for example
+    }
+
+    message ValidationErrors {
+        AdministratorError administrator_error = 1;
+
+        message AdministratorError {
+            oneof type {
+                PhysicalPersonError physical_person_error = 1;
+                LegalEntityError legal_entity_error = 2;
+            }
+
+            message PhysicalPersonError {
+                Error.FullNameError full_name_error = 1;
+                IdentityDocumentError identity_document_error = 2;
+                Error.TaxpayerNumberError taxpayer_number_error = 3;
+                Error.BirthdayError birthday_error = 4;
+                reserved 5;
+                ContactsError contacts = 6;
+
+                message IdentityDocumentError {
+                    reserved 1;
+                    Error.IdentifierError identifier_error = 2;
+                    Error.IssueDateError issue_date_error = 3;
+                    Error.AdditionalInfoError additional_info_error = 4;
+                }
+            }
+
+            message LegalEntityError {
+                Error.FullNameError full_name_error = 1;
+                Error.InternationalFullnameError international_full_name_error = 2;
+                Error.TaxpayerNumberError taxpayer_number_error = 3;
+                AddressError legal_address_error = 4;
+                reserved 5;
+                ContactsError contacts_error = 6;
+            }
+
+            message ContactsError {
+                AddressError post_address_error = 1;
+                Error.PhoneError administrative_phone_error = 2; // used for sending sms for confirming the operations of changing the registrar
+                Error.EmailError administrative_email_error = 3; // used for sending email for confirming the operations of changing the registrar
+            }
+
+            message AddressError {
+                Error.PostalCodeError postal_code_error = 1;
+                reserved 2;
+                Error.AreaError area_error = 3;
+                Error.LocalityError locality_error = 4;
+                Error.AdditionalInfoError additional_info_error = 5;
+            }
+
+            message Error {
+                message EmailError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_FORMAT = 0;
+                        EMAIL_IN_BLOCKLIST = 1;
+                        TOO_LONG = 3;
+                        IS_EMPTY = 4;
+                    }
+                }
+
+                message FullNameError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_ENCODING = 0;
+                        INVALID_FORMAT = 1;
+                        IS_EMPTY = 2;
+                    }
+                }
+
+                message InternationalFullnameError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_ENCODING = 0;
+                        INVALID_FORMAT = 1;
+                        IS_EMPTY = 2;
+                    }
+                }
+
+                message TaxpayerNumberError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_NUMBER = 0;
+                    }
+                }
+
+                message BirthdayError {
+                    repeated Error error = 1;
+                    beget.bdrm.v1.structure.Date value = 2;
+
+                    enum Error {
+                        TOO_YOUNG = 0;
+                        TOO_OLD = 1;
+                        IS_EMPTY = 2;
+                        INVALID_DATE = 3;
+                    }
+                }
+
+                message IdentifierError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_IDENTIFIER = 0;
+                    }
+                }
+
+                message IssueDateError {
+                    repeated Error error = 1;
+                    beget.bdrm.v1.structure.Date value = 2;
+
+                    enum Error {
+                        INVALID_FORMAT = 0;
+                        IS_EMPTY = 1;
+                    }
+                }
+
+                message AdditionalInfoError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        TOO_LONG = 0;
+                    }
+                }
+
+                message PhoneError {
+                    repeated Error error = 1;
+                    Phone value = 2;
+
+                    enum Error {
+                        INVALID_PHONE_NUMBER = 0;
+                    }
+                }
+
+                message PostalCodeError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        NOT_IN_CITY = 0;
+                        NOT_FOUND = 1;
+                        IS_EMPTY = 2;
+                    }
+                }
+
+                message AreaError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        INVALID_AREA = 0;
+                        IS_EMPTY = 1;
+                    }
+                }
+                message LocalityError {
+                    repeated Error error = 1;
+                    string value = 2;
+
+                    enum Error {
+                        IS_EMPTY = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    message ValidationInfo {
+        PhysicalPerson physical_person = 1;
+        LegalEntity legal_entity = 2;
+
+        message Field {
+            bool is_required = 1;
+            beget.bdrm.v1.structure.PerlCompatibleRegExp prevalidation = 2;
+        }
+
+        message PhysicalPerson {
+            Field full_name = 1;
+            IdentityDocument identity_document = 2;
+            Field taxpayer_number = 3;
+            Field birthday = 4;
+            Field resident_country_code = 5;
+            Contacts contacts = 6;
+
+            message IdentityDocument {
+                Field issue_country = 1;
+                Field identifier = 2;
+                Field issue_date = 3;
+                Field additional_info = 4;
+            }
+        }
+
+        message LegalEntity {
+            Field full_name = 1;
+            Field international_full_name = 2;
+            Field taxpayer_number = 3;
+            Address legal_address = 4;
+            Field resident_country_code = 5;
+            Contacts contacts = 6;
+        }
+
+        message Contacts {
+            Address post_address = 1;
+            Field administrative_phone = 2;
+            Field administrative_email = 3;
+        }
+
+        message Address {
+            Field postal_code = 1;
+            Field country_code = 2;
+            Field area = 3;
+            Field locality = 4;
+            Field additional_info = 5;
+        }
+    }
+}
+
+message Phone {
+    CountryCode country_code = 1;
+    string number = 2;
+}
+
+message Date {
+    uint32 year = 1;
+    Month month = 2;
+    uint32 day = 3;
+
+    enum Month {
+        JANUARY = 0;
+        FEBRUARY = 1;
+        MARCH = 2;
+        APRIL = 3;
+        MAY = 4;
+        JUNE = 5;
+        JULY = 6;
+        AUGUST = 7;
+        SEPTEMBER = 8;
+        OCTOBER = 9;
+        NOVEMBER = 10;
+        DECEMBER = 11;
+    }
+}
+
+// Registration or renew domain period in years
+enum Period {
+    ONE_YEAR = 0;
+    TWO_YEARS = 1;
+    THREE_YEARS = 2;
+    FOUR_YEARS = 3;
+    FIVE_YEARS = 4;
+    SIX_YEARS = 5;
+    SEVEN_YEARS = 6;
+    EIGHT_YEARS = 7;
+    NINE_YEARS = 8;
+    TEN_YEARS = 9;
+}
+
+enum CountryCode {
+    AF = 0;
+    AX = 1;
+    AL = 2;
+    DZ = 3;
+    AS = 4;
+    AD = 5;
+    AO = 6;
+    AI = 7;
+    AQ = 8;
+    AG = 9;
+    AR = 10;
+    AM = 11;
+    AW = 12;
+    AU = 13;
+    AT = 14;
+    AZ = 15;
+    BH = 16;
+    BS = 17;
+    BD = 18;
+    BB = 19;
+    BY = 20;
+    BE = 21;
+    BZ = 22;
+    BJ = 23;
+    BM = 24;
+    BT = 25;
+    BO = 26;
+    BQ = 27;
+    BA = 28;
+    BW = 29;
+    BV = 30;
+    BR = 31;
+    IO = 32;
+    BN = 33;
+    BG = 34;
+    BF = 35;
+    BI = 36;
+    KH = 37;
+    CM = 38;
+    CA = 39;
+    CV = 40;
+    KY = 41;
+    CF = 42;
+    TD = 43;
+    CL = 44;
+    CN = 45;
+    CX = 46;
+    CC = 47;
+    CO = 48;
+    KM = 49;
+    CG = 50;
+    CD = 51;
+    CK = 52;
+    CR = 53;
+    CI = 54;
+    HR = 55;
+    CU = 56;
+    CW = 57;
+    CY = 58;
+    CZ = 59;
+    DK = 60;
+    DJ = 61;
+    DM = 62;
+    DO = 63;
+    EC = 64;
+    EG = 65;
+    SV = 66;
+    GQ = 67;
+    ER = 68;
+    EE = 69;
+    ET = 70;
+    FK = 71;
+    FO = 72;
+    FJ = 73;
+    FI = 74;
+    FR = 75;
+    GF = 76;
+    PF = 77;
+    TF = 78;
+    GA = 79;
+    GM = 80;
+    GE = 81;
+    DE = 82;
+    GH = 83;
+    GI = 84;
+    GR = 85;
+    GL = 86;
+    GD = 87;
+    GP = 88;
+    GU = 89;
+    GT = 90;
+    GG = 91;
+    GN = 92;
+    GW = 93;
+    GY = 94;
+    HT = 95;
+    HM = 96;
+    VA = 97;
+    HN = 98;
+    HK = 99;
+    HU = 100;
+    IS = 101;
+    IN = 102;
+    ID = 103;
+    IR = 104;
+    IQ = 105;
+    IE = 106;
+    IM = 107;
+    IL = 108;
+    IT = 109;
+    JM = 110;
+    JP = 111;
+    JE = 112;
+    JO = 113;
+    KZ = 114;
+    KE = 115;
+    KI = 116;
+    KP = 117;
+    KR = 118;
+    KW = 119;
+    KG = 120;
+    LA = 121;
+    LV = 122;
+    LB = 123;
+    LS = 124;
+    LR = 125;
+    LY = 126;
+    LI = 127;
+    LT = 128;
+    LU = 129;
+    MO = 130;
+    MK = 131;
+    MG = 132;
+    MW = 133;
+    MY = 134;
+    MV = 135;
+    ML = 136;
+    MT = 137;
+    MH = 138;
+    MQ = 139;
+    MR = 140;
+    MU = 141;
+    YT = 142;
+    MX = 143;
+    FM = 144;
+    MD = 145;
+    MC = 146;
+    MN = 147;
+    ME = 148;
+    MS = 149;
+    MA = 150;
+    MZ = 151;
+    MM = 152;
+    NA = 153;
+    NR = 154;
+    NP = 155;
+    NL = 156;
+    NC = 157;
+    NZ = 158;
+    NI = 159;
+    NE = 160;
+    NG = 161;
+    NU = 162;
+    NF = 163;
+    MP = 164;
+    NO = 165;
+    OM = 166;
+    PK = 167;
+    PW = 168;
+    PS = 169;
+    PA = 170;
+    PG = 171;
+    PY = 172;
+    PE = 173;
+    PH = 174;
+    PN = 175;
+    PL = 176;
+    PT = 177;
+    PR = 178;
+    QA = 179;
+    RE = 180;
+    RO = 181;
+    RU = 182;
+    RW = 183;
+    BL = 184;
+    SH = 185;
+    KN = 187;
+    LC = 188;
+    MF = 189;
+    PM = 190;
+    VC = 191;
+    WS = 192;
+    SM = 193;
+    ST = 194;
+    SA = 195;
+    SN = 196;
+    RS = 197;
+    SC = 198;
+    SL = 199;
+    SG = 200;
+    SX = 201;
+    SK = 202;
+    SI = 203;
+    SB = 204;
+    SO = 205;
+    ZA = 206;
+    GS = 207;
+    SS = 208;
+    ES = 209;
+    LK = 210;
+    SD = 211;
+    SR = 212;
+    SJ = 213;
+    SZ = 214;
+    SE = 215;
+    CH = 216;
+    SY = 217;
+    TW = 218;
+    TJ = 219;
+    TZ = 220;
+    TH = 221;
+    TL = 222;
+    TG = 223;
+    TK = 224;
+    TO = 225;
+    TT = 226;
+    TN = 227;
+    TR = 228;
+    TM = 229;
+    TC = 230;
+    TV = 231;
+    UG = 232;
+    UA = 233;
+    AE = 234;
+    GB = 235;
+    US = 236;
+    UM = 237;
+    UY = 238;
+    UZ = 239;
+    VU = 240;
+    VE = 241;
+    VN = 242;
+    VG = 243;
+    VI = 244;
+    WF = 245;
+    EH = 246;
+    YE = 247;
+    ZM = 248;
+    ZW = 249;
+}
+
+message PerlCompatibleRegExp {
+    string pattern = 1;
+    repeated Flag flag = 2;
+
+    enum Flag {
+        GLOBAL = 0;
+        MULTI_LINE = 1;
+        INSENTITIVE = 2;
+        EXTENDED = 3;
+        EXTRA = 4;
+        SINGLE_LINE = 5;
+        UNICODE = 6;
+        UNGREADY = 7;
+        ANCHORED = 8;
+        JCHANGED = 9;
+        DOLLAR_END_ONLY = 10;
+    }
+}

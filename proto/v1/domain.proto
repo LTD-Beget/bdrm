@@ -2,66 +2,354 @@ syntax = "proto3";
 
 package beget.bdrm.v1.domain;
 
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "bdrm/proto/v1/structure.proto";
 
 service DomainService {
-    rpc register (RegisterRequest) returns (RegisterResponse) {}
+    rpc register (RegisterRequest) returns (RegisterResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/domain/register"
+            body: "*"
+		};
+    }
 
-    rpc declineRegister (DeclineRegisterRequest) returns (DeclineRegisterResponse) {}
+    rpc declineRegistration (DeclineRegistrationRequest) returns (DeclineRegistrationResponse) {
+        option (google.api.http) = {
+			delete: "/v1/bdrm/domain/decline-registration"
+			body: "*"
+		};
+    }
 
-    rpc get (GetRequest) returns (GetResponse) {}
+    rpc get (GetRequest) returns (GetResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/domain/"
+		};
+    }
 
-    rpc delegate (DelegateRequest) returns (DelegateResponse) {}
+    rpc delegate (DelegateRequest) returns (DelegateResponse) {
+        option (google.api.http) = {
+			put: "/v1/bdrm/domain/delegate"
+			body: "*"
+		};
+    }
 
-    rpc renew (RenewRequest) returns (RenewResponse) {}
+    rpc renew (RenewRequest) returns (RenewResponse) {
+        option (google.api.http) = {
+			put: "/v1/bdrm/domain/renew"
+			body: "*"
+		};
+    }
 
-    rpc autoRenew (AutoRenewRequest) returns (AutoRenewResponse) {}
+    rpc autoRenew (AutoRenewRequest) returns (AutoRenewResponse) {
+        option (google.api.http) = {
+			patch: "/v1/bdrm/domain/auto-renew"
+			body: "*"
+		};
+    }
 
-    rpc orderCertificate (OrderCertificateRequest) returns (OrderCertificateResponse) {}
+    rpc orderCertificate (OrderCertificateRequest) returns (OrderCertificateResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/domain/order-certificate"
+            body: "*"
+		};
+    }
 
-    rpc orderVoucher (OrderVoucherRequest) returns (OrderVoucherResponse) {}
+    rpc getCertificateOrders (GetCertificateOrdersRequest) returns (GetCertificateOrdersResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/domain/get-certificate-orders"
+		};
+    }
+
+    rpc orderVoucher (OrderVoucherRequest) returns (OrderVoucherResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/domain/order-vaucher"
+			body: "*"
+		};
+    }
+
+    rpc getVoucherOrders (GetVoucherOrdersRequest) returns (GetVoucherOrdersResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/domain/get-vaucher-orders"
+		};
+    }
 }
 
-message RegisterRequest {}
-message RegisterResponse {}
+message RegisterRequest {
+    string fqdn = 1;
+    beget.bdrm.v1.structure.Administrator administrator = 2;
+    AuthoritativeNameServers authoritative_name_servers = 3;
+    beget.bdrm.v1.structure.Period period = 4;
+    bool enable_auto_renew = 5;
+    bool enable_private_person_status = 6;
+}
 
-message DeclineRegisterRequest {}
-message DeclineRegisterResponse {}
+message RegisterResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
 
-message GetRequest {}
-message GetResponse {}
+    enum Error {
+        INVALID_DOMAIN = 0;
+        DOMAIN_ALREADY_REGISTERED = 1;
+        INVALID_ADMINISTRATOR = 2;
+        INVALID_NS_SERVERS = 3;
+        INVALID_PERIOD_FOR_TLD = 4;
+        NOT_ENOUGH_MONEY = 5;
+    }
+}
 
-message DelegateRequest {}
-message DelegateResponse {}
+message DeclineRegistrationRequest {
+    string fqdn = 1;
+}
 
-message RenewRequest {}
-message RenewResponse {}
+message DeclineRegistrationResponse {
+    oneof result {
+        Error error = 1;
+    }
 
+    enum Error {
+        DOMAIN_ALREADY_REGISTERED = 0;
+        REGISTRATION_ORDER_NOT_FOUND = 1;
+        TEMPORARY_BUSY_TRY_LATER = 2;
+    }
+}
 
-message AutoRenewRequest {}
-message AutoRenewResponse {}
+message GetRequest {
+    repeated Scope scope = 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
 
+    message Scope {
+        oneof condition {
+            ByFqdn by_fqdn = 1;
+            ByRegisterDate by_register_date = 2;
+        }
 
-message OrderVoucherRequest {}
-message OrderVoucherResponse {}
+        message ByFqdn {
+            repeated string fqdn = 1;
+        }
 
-message OrderCertificateRequest {}
-message OrderCertificateResponse {}
+        message ByRegisterDate {
+            google.protobuf.Timestamp from = 1;
+            google.protobuf.Timestamp to = 2;
+        }
+    }
+}
 
+message GetResponse {
+    oneof result {
+        Page page = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        INVALID_SCOPE_CONDITION = 0;
+        INVALID_PAGE_NUMBER = 1;
+        NOT_FOUND_PAGE_NUMBER = 2;
+        TOO_LITTLE_PAGE_SIZE = 3;
+        TOO_BIG_PAGE_SIZE = 4;
+    }
 
+    message Page {
+        uint32 page_number = 1;
+        uint32 total_pages = 2;
+        repeated beget.bdrm.v1.structure.Domain domain = 3;
+    }
+}
 
+message DelegateRequest {
+    string fqdn = 1;
+    repeated AuthoritativeNameServers authoritative_name_servers = 2;
+}
 
+message DelegateResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_NS_SERVERS = 1;
+        DOMAIN_NOT_FOUND = 2;
+    }
+}
 
+message RenewRequest {
+    string fqdn = 1;
+    beget.bdrm.v1.structure.Period period = 2;
+}
 
+message RenewResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_DOMAIN = 1;
+        DOMAIN_NOT_FOUND = 2;
+        INVALID_PERIOD = 3;
+        CANNOT_RENEW = 4;
+        NOT_ENOUGH_MONEY = 5;
+    }
+}
 
+message AutoRenewRequest {
+    string fqdn = 1;
+    bool enable = 2;
+}
 
+message AutoRenewResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        INVALID_DOMAIN = 0;
+        DOMAIN_NOT_FOUND = 1;
+    }
+}
 
+message OrderCertificateRequest {
+    string fqdn = 1;
+    string full_name = 2;
+    beget.bdrm.v1.structure.Administrator.Address address = 3;
+}
 
+message OrderCertificateResponse {
+    oneof result {
+        CertificateOrder certificate_order = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_DOMAIN = 1;
+        DOMAIN_NOT_FOUND = 2;
+        INVALID_ADDRESS = 3;
+        INVALID_FULL_NAME = 4;
+        NOT_ENOUGH_MONEY = 5;
+    }
+}
 
+message GetCertificateOrdersRequest {
+    reserved 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
 
+message GetCertificateOrdersResponse {
+    oneof result {
+        Page page = 1;
+        Error error = 2;
+    }
 
+    enum Error {
+        INVALID_PAGE_NUMBER = 0;
+        NOT_FOUND_PAGE_NUMBER = 1;
+        TOO_LITTLE_PAGE_SIZE = 2;
+        TOO_BIG_PAGE_SIZE = 3;
+    }
 
+    message Page {
+        uint32 page_number = 1;
+        uint32 total_pages = 2;
+        repeated CertificateOrder certificate_order = 3;
+    }
+}
+
+message OrderVoucherRequest {
+    string fqdn = 1;
+    string full_name = 2;
+    beget.bdrm.v1.structure.Administrator.Address address = 3;
+}
+
+message OrderVoucherResponse {
+    oneof result {
+        VoucherOrder voucher_order = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_DOMAIN = 1;
+        DOMAIN_NOT_FOUND = 2;
+        INVALID_ADDRESS = 3;
+        INVALID_FULL_NAME = 4;
+        NOT_ENOUGH_MONEY = 5;
+    }
+}
+
+message GetVoucherOrdersRequest {
+    reserved 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
+
+message GetVoucherOrdersResponse {
+    oneof result {
+        Page page = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        INVALID_PAGE_NUMBER = 0;
+        NOT_FOUND_PAGE_NUMBER = 1;
+        TOO_LITTLE_PAGE_SIZE = 2;
+        TOO_BIG_PAGE_SIZE = 3;
+    }
+
+    message Page {
+        uint32 page_number = 1;
+        uint32 total_pages = 2;
+        repeated VoucherOrder voucher_order = 3;
+    }
+}
+
+message CertificateOrder {
+    string full_name = 1;
+    beget.bdrm.v1.structure.Administrator.Address address = 2;
+    beget.bdrm.v1.structure.Domain domain = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp updated = 5;
+    Status status = 6;
+
+    enum Status {
+        PENDING = 0;
+        COMPLETED = 1;
+        DECLINED = 2;
+    }
+}
+
+message VoucherOrder {
+    string full_name = 1;
+    beget.bdrm.v1.structure.Administrator.Address address = 2;
+    beget.bdrm.v1.structure.Domain domain = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp updated = 5;
+    Status status = 6;
+
+    enum Status {
+        PENDING = 0;
+        COMPLETED = 1;
+        DECLINED = 2;
+    }
+}
+
+message AuthoritativeNameServers {
+    beget.bdrm.v1.structure.AuthoritativeNameServer first = 1;
+    beget.bdrm.v1.structure.AuthoritativeNameServer second = 2;
+    beget.bdrm.v1.structure.AuthoritativeNameServer third = 3;
+    beget.bdrm.v1.structure.AuthoritativeNameServer fourth = 4;
+    beget.bdrm.v1.structure.AuthoritativeNameServer fifth = 5;
+    beget.bdrm.v1.structure.AuthoritativeNameServer sixth = 6;
+    beget.bdrm.v1.structure.AuthoritativeNameServer seventh = 7;
+    beget.bdrm.v1.structure.AuthoritativeNameServer eighth = 8;
+    beget.bdrm.v1.structure.AuthoritativeNameServer ninth = 9;
+    beget.bdrm.v1.structure.AuthoritativeNameServer tenth = 10;
+}

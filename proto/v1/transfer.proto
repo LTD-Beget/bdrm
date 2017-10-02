@@ -2,20 +2,97 @@ syntax = "proto3";
 
 package beget.bdrm.v1.transfer;
 
+import "google/api/annotations.proto";
+import "bdrm/proto/v1/structure.proto";
 
 service TransferService {
-    rpc generateAuthInfo (GenerateAuthInfoRequest) returns (GenerateAuthInfoResponse) {}
+    rpc sendAuthInfo (SendAuthInfoRequest) returns (SendAuthInfoResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/transfer/send-auth-info"
+            body: "*"
+		};
+    }
 
-    rpc changeOwner (ChangeOwnerRequest) returns (ChangeOwnerResponse) {}
+    rpc changeOwner (ChangeOwnerRequest) returns (ChangeOwnerResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/transfer/change-owner"
+            body: "*"
+		};
+    }
 
-    rpc changeRegistrar (ChangeRegistrarRequest) returns (ChangeRegistrarResponse) {}
+    rpc initiateChangingRegistrar (InitiateChangingRegistrarRequest) returns (InitiateChangingRegistrarResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/transfer/initiate-changing-registrar"
+            body: "*"
+		};
+    }
 }
 
-message ChangeRegistrarRequest {}
-message ChangeRegistrarResponse {}
+message SendAuthInfoRequest {
+    string fqdn = 1;
+    Method method = 2;
 
-message ChangeOwnerRequest {}
-message ChangeOwnerResponse {}
+    enum Method {
+        BY_PHONE = 0;
+        BY_EMAIL = 1;
+    }
+}
 
-message GenerateAuthInfoRequest {}
-message GenerateAuthInfoResponse {}
+message SendAuthInfoResponse {
+    oneof result {
+        Error error = 1;
+    }
+
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_DOMAIN = 1;
+        DOMAIN_NOT_FOUND = 2;
+        ADMINISTRATIVE_PHONE_NOT_FOUND = 3;
+        ADMINISTRATIVE_EMAIL_NOT_FOUND = 4;
+        AUTH_INFO_SEND_IS_POSSIBLE_AFTER_A_WHILE = 5;
+    }
+}
+
+message ChangeOwnerRequest {
+    string fqdn = 1;
+    string owner_name = 2;
+}
+
+message ChangeOwnerResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        INVALID_DOMAIN = 0;
+        DOMAIN_NOT_FOUND = 1;
+        OWNER_NOT_FOUND = 2;
+        OWNER_CHANGE_FORBIDDEN = 3;
+        OWNER_CHANGE_ALREADY_REQUESTED = 4;
+        REQUEST_CHANGE_OWNER_TO_MYSELF = 5;
+    }
+}
+
+message InitiateChangingRegistrarRequest {
+    string fqdn = 1;
+    string auth_info = 2;
+}
+
+message InitiateChangingRegistrarResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_AUTH_CODE = 1;
+        INVALID_DOMAIN = 2;
+        DOMAIN_ALREADY_BELONG_TO_US = 3;
+        DOMAIN_AVALIABLE_TO_REGISTER = 4;
+        UNKNOWN_TLD = 5;
+        UNSUPPORTED_TLD = 6;
+        MONEY_NOT_ENOUGH = 7;
+    }
+}
