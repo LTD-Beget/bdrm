@@ -4,7 +4,6 @@ package beget.bdrm.v1.domain;
 
 
 service DomainService {
-
     rpc register (RegisterRequest) returns (RegisterResponse) {}
 
     rpc declineRegister (DeclineRegisterRequest) returns (DeclineRegisterResponse) {}

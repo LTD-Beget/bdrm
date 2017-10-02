@@ -5,14 +5,23 @@ package beget.bdrm.v1.administrator;
 
 service AdministratorService {
     rpc validate (ValidateRequest) returns (ValidateResponse) {}
+
     rpc getRequiredFields (GetRequiredFieldsRequest) returns (GetRequiredFieldsResponse) {}
+
     rpc editContacts (EditContactsRequest) returns (EditContactsResponse) {}
+
     rpc makeChangeOrder (MakeChangeOrderRequest) returns (MakeChangeOrderResponse) {}
+
     rpc getChangeOrders (GetChangeOrdersRequest) returns (GetChangeOrdersResponse) {}
+
     rpc cancelChangeOrder (CancelChangeOrderRequest) returns (CancelChangeOrderResponse) {}
+
     rpc makeTemplate (MakeTemplateRequest) returns (MakeTemplateResponse) {}
+
     rpc getTemplates (GetTemplatesRequest) returns (GetTemplatesResponse) {}
+
     rpc editTemplate (EditTemplateRequest) returns (EditTemplateResponse) {}
+
     rpc deleteTemplate (DeleteTemplateRequest) returns (DeleteTemplateResponse) {}
 }
 

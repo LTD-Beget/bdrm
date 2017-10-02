@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.whois;
+
+import "google/protobuf/timestamp.proto";
+
+service WhoisService {
+    rpc check (CheckRequest) returns (CheckResponse) {}
+
+    rpc checkBatch (CheckBatchRequest) returns (CheckBatchResponse) {}
+}
+
+message CheckRequest {
+    string domain_name = 1;
+}
+
+message CheckResponse {
+    oneof result {
+        DomainInformation domain_info = 1;
+        Error error = 2;
+    }
+
+    message Error {
+        Type type = 1;
+        string message = 2;
+
+        enum Type {
+            INTERNAL_ERROR = 0;
+            DOMAIN_NOT_FOUND_ERROR = 1;
+        }
+    }
+}
+
+message CheckBatchRequest {
+    repeated string domain_name = 1;
+}
+message CheckBatchResponse {
+    repeated Result result = 1;
+
+    message Result {
+        oneof result {
+            DomainInformation domain_info = 1;
+            Error error = 2;
+        }
+
+        message Error {
+            Type type = 1;
+            string message = 2;
+
+            enum Type {
+                INTERNAL_ERROR = 0;
+                DOMAIN_NOT_FOUND_ERROR = 1;
+            }
+        }
+    }
+}
+
+
+message DomainInformation {
+    string domain_name = 1;
+    string registrar_name = 2;
+    string contact_email = 3;
+    string whois_server = 4;
+    repeated string name_server = 5;
+    Dates dates = 6;
+    repeated string status = 7;
+    string audit_update_date = 8;
+    Contacts registrant = 9;
+    Contacts administrative = 10;
+
+    message Dates {
+        google.protobuf.Timestamp created = 1;
+        google.protobuf.Timestamp updated = 2;
+        google.protobuf.Timestamp expired = 3;
+    }
+
+    message Contacts {
+        string email = 1;
+        string name = 2;
+        string organization = 3;
+        string street = 4;
+        string city = 5;
+        string state = 6;
+        string postal_code = 7;
+        string country = 8;
+        string fax = 9;
+        string fax_ext = 10;
+        string telephone = 11;
+        string telephone_ext = 12;
+    }
+}
