@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package beget.bdrm.v1.template;
+
+import "google/api/annotations.proto";
+import "bdrm/proto/v1/structure.proto";
+
+service TemplateService {
+    rpc get (GetRequest) returns (GetResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/template"
+		};
+    }
+
+    rpc create (CreateRequest) returns (CreateResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/template/"
+			body: "*"
+		};
+    }
+
+    rpc update (UpdateRequest) returns (UpdateResponse) {
+        option (google.api.http) = {
+			patch: "/v1/bdrm/template/{id}"
+			body: "*"
+		};
+    }
+
+    rpc delete (DeleteRequest) returns (DeleteResponse) {
+        option (google.api.http) = {
+			delete: "/v1/bdrm/template"
+			body: "*"
+		};
+    }
+}
+
+message GetRequest {
+    reserved 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
+
+message GetResponse {
+    oneof result {
+        Page page = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        INVALID_PAGE_NUMBER = 0;
+        NOT_FOUND_PAGE_NUMBER = 1;
+        TOO_LITTLE_PAGE_SIZE = 2;
+        TOO_BIG_PAGE_SIZE = 3;
+    }
+
+    message Page {
+        uint32 page_number = 1;
+        uint32 total_pages = 2;
+        repeated Template template = 3;
+    }
+}
+
+message CreateRequest {
+    beget.bdrm.v1.structure.Administrator administrator = 1;
+}
+
+message CreateResponse {
+    oneof result {
+        Template template = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        EMPTY_ADMINISTRATOR = 0;
+        INVALID_ADMINISTRATOR = 1;
+    }
+}
+
+message UpdateRequest {
+    uint64 id = 1;
+
+    oneof update_data {
+        beget.bdrm.v1.structure.Administrator.PhysicalPerson physical_person = 2;
+        beget.bdrm.v1.structure.Administrator.LegalEntity legal_entity = 3;
+    }
+}
+
+message UpdateResponse {
+    oneof result {
+        Template template = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        TEMPLATE_NOT_FOUND = 0;
+        EMPTY_UPDATE_DATA = 1;
+        WRONG_ADMINISTRATOR_TYPE = 2;
+        INVALID_ADMINISTRATOR = 3;
+    }
+}
+
+message DeleteRequest {
+    uint64 id = 1;
+}
+
+message DeleteResponse {
+    oneof result {
+        Error error = 1;
+    }
+
+    enum Error {
+        TEMPLATE_NOT_FOUND = 0;
+    }
+}
+
+message Template {
+    uint64 id = 1;
+    beget.bdrm.v1.structure.Administrator administrator = 2;
+}

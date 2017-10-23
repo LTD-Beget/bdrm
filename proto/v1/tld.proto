@@ -2,10 +2,46 @@ syntax = "proto3";
 
 package beget.bdrm.v1.tld;
 
+import "google/api/annotations.proto";
+import "bdrm/proto/v1/structure.proto";
 
 service TldService {
-    rpc get(GetRequest) returns (GetResponce)
+    rpc get (GetRequest) returns (GetResponce) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/tld/"
+		};
+    }
 }
 
-message GetRequest {}
-message GetResponce {}
+message GetRequest {
+}
+
+message GetResponce {
+    repeated Tld tld = 1;
+}
+
+message Tld {
+    string name = 1;
+    bool is_idn = 2;
+    bool is_private_person_available = 3;
+    PriceList price_list = 4;
+    PriceList price_list_for_idn = 5;
+    repeated beget.bdrm.v1.structure.Period allowed_period = 6;
+
+    message PriceList {
+        Price registration_price = 1;
+        Price renew_price = 2;
+    }
+
+    message Price {
+        uint64 amount = 1;
+        uint32 pennies = 2;
+        Currency currency = 3;
+
+        enum Currency {
+            RUR = 0;
+            USD = 1;
+            EUR = 2;
+        }
+    }
+}

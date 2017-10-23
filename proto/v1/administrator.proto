@@ -2,57 +2,190 @@ syntax = "proto3";
 
 package beget.bdrm.v1.administrator;
 
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "bdrm/proto/v1/structure.proto";
 
 service AdministratorService {
-    rpc validate (ValidateRequest) returns (ValidateResponse) {}
+    rpc getPreValidationInfo (GetPreValidationInfoRequest) returns (GetPreValidationInfoResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/administrator/get-pre-validation-info"
+		};
+    }
 
-    rpc getRequiredFields (GetRequiredFieldsRequest) returns (GetRequiredFieldsResponse) {}
+    rpc validate (ValidateRequest) returns (ValidateResponse) {
+        option (google.api.http) = {
+			put: "/v1/bdrm/administrator/validate"
+			body: "*"
+		};
+    }
 
-    rpc editContacts (EditContactsRequest) returns (EditContactsResponse) {}
+    rpc editContacts (EditContactsRequest) returns (EditContactsResponse) {
+        option (google.api.http) = {
+			patch: "/v1/bdrm/administrator/edit-contacts"
+			body: "*"
+		};
+    }
 
-    rpc makeChangeOrder (MakeChangeOrderRequest) returns (MakeChangeOrderResponse) {}
+    rpc makeChangeOrder (MakeChangeOrderRequest) returns (MakeChangeOrderResponse) {
+        option (google.api.http) = {
+			post: "/v1/bdrm/administrator/make-change-order"
+			body: "*"
+		};
+    }
 
-    rpc getChangeOrders (GetChangeOrdersRequest) returns (GetChangeOrdersResponse) {}
+    rpc getChangeOrders (GetChangeOrdersRequest) returns (GetChangeOrdersResponse) {
+        option (google.api.http) = {
+			get: "/v1/bdrm/administrator/get-change-orders"
+		};
+    }
 
-    rpc cancelChangeOrder (CancelChangeOrderRequest) returns (CancelChangeOrderResponse) {}
-
-    rpc makeTemplate (MakeTemplateRequest) returns (MakeTemplateResponse) {}
-
-    rpc getTemplates (GetTemplatesRequest) returns (GetTemplatesResponse) {}
-
-    rpc editTemplate (EditTemplateRequest) returns (EditTemplateResponse) {}
-
-    rpc deleteTemplate (DeleteTemplateRequest) returns (DeleteTemplateResponse) {}
+    rpc cancelChangeOrder (CancelChangeOrderRequest) returns (CancelChangeOrderResponse) {
+        option (google.api.http) = {
+			patch: "/v1/bdrm/administrator/cancel-change-order"
+			body: "*"
+		};
+    }
 }
 
-message DeleteTemplateRequest {}
-message DeleteTemplateResponse {}
+message GetPreValidationInfoRequest {
+    oneof tld {
+        OverallTld overall_tld = 1;
+        string tld_name = 2;
+    }
+}
 
-message EditTemplateRequest {}
-message EditTemplateResponse {}
+message GetPreValidationInfoResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Administrator.ValidationInfo validation_info = 1;
+        Error error = 2;
+    }
+    enum Error {
+        UNKNOWN_REAL_TLD = 0;
+        EMPTY_TLD = 1;
+    }
+}
+
+message ValidateRequest {
+    oneof tld {
+        OverallTld overall_tld = 1;
+        string real_tld = 2;
+    }
+
+    beget.bdrm.v1.structure.Administrator administrator = 3;
+}
+
+message ValidateResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Administrator.ValidationErrors validation_errors = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        UNKNOWN_TLD = 0;
+        EMPTY_TLD = 1;
+        EMPTY_ADMINISTRATOR = 2;
+    }
+}
+
+message EditContactsRequest {
+    string fqdn = 1;
+    beget.bdrm.v1.structure.Administrator.Contacts contacts = 2;
+}
+
+message EditContactsResponse {
+    oneof result {
+        beget.bdrm.v1.structure.Domain domain = 1;
+        beget.bdrm.v1.structure.Administrator.ValidationErrors validation_errors = 2;
+        Error error = 3;
+    }
+
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        INVALID_DOMAIN = 1;
+        DOMAIN_NOT_FOUND = 2;
+        EMPTY_CONTACTS = 3;
+    }
+}
+
+message MakeChangeOrderRequest {
+    repeated string fqdn = 1;
+
+    oneof administrator {
+        beget.bdrm.v1.structure.Administrator.PhysicalPerson physical_person = 2;
+        beget.bdrm.v1.structure.Administrator.LegalEntity legal_entity = 3;
+    }
+}
+
+message MakeChangeOrderResponse {
+    oneof result {
+        ChangeAdministratorOrder change_administrator_order = 1;
+        Error error = 2;
+    }
+
+    enum Error {
+        OPERATION_PROHIBITED = 0;
+        DOMAIN_ADMINISTRATORS_ARE_DIFFERENT = 1;
+    }
+}
+
+message GetChangeOrdersRequest {
+}
 
 
-message GetTemplatesRequest {}
-message GetTemplatesResponse {}
+message GetChangeOrdersResponse {
+    repeated ChangeAdministratorOrder change_administrator_order = 1;
+}
 
-message MakeTemplateRequest {}
-message MakeTemplateResponse {}
+message CancelChangeOrderRequest {
+    uint64 id = 1;
+}
 
+message CancelChangeOrderResponse {
+    oneof result {
+        ChangeAdministratorOrder change_administrator_order = 1;
+        Error error = 2;
+    }
 
-message CancelChangeOrderRequest {}
-message CancelChangeOrderResponse {}
+    enum Error {
+        CHANGE_ORDER_NOT_FOUND = 0;
+    }
+}
 
-message GetChangeOrdersRequest {}
-message GetChangeOrdersResponse {}
+message ChangeAdministratorOrder {
+    uint64 id = 1;
+    repeated beget.bdrm.v1.structure.Domain domain = 2;
+    string application_form_link = 3; // Url-address for application form to change administrator
+    google.protobuf.Timestamp created = 4;
+    oneof status {
+        Pending pending = 5;
+        Declined declined = 6;
+        Approved approved = 7;
+        Canceled canceled = 8;
+        Completed completed = 9;
+    }
 
-message MakeChangeOrderRequest {}
-message MakeChangeOrderResponse {}
+    message Declined {
+        google.protobuf.Timestamp examined_at = 1;
+    }
 
-message EditContactsRequest {}
-message EditContactsResponse {}
+    message Approved {
+        google.protobuf.Timestamp examined = 1;
+    }
 
-message GetRequiredFieldsRequest {}
-message GetRequiredFieldsResponse {}
+    message Pending {
+    }
 
-message ValidateRequest {}
-message ValidateResponse {}
+    message Canceled {
+        google.protobuf.Timestamp cancel = 1;
+    }
+
+    message Completed {
+        google.protobuf.Timestamp acceptance = 1;
+    }
+}
+
+// Abstract TLD, is used when obtaining administrator's validation rules without binding to a particular TLD
+enum OverallTld {
+    OVERALL_TLD = 0;
+}
