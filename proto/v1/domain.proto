@@ -77,11 +77,16 @@ service DomainService {
 
 message RegisterRequest {
     string fqdn = 1;
-    beget.bdrm.v1.structure.Administrator administrator = 2;
-    AuthoritativeNameServers authoritative_name_servers = 3;
-    beget.bdrm.v1.structure.Period period = 4;
-    bool enable_auto_renew = 5;
-    bool enable_private_person_status = 6;
+    oneof administrtor {
+        beget.bdrm.v1.structure.Administrator.PhysicalPerson physical_person = 2;
+        beget.bdrm.v1.structure.Administrator.LegalEntity legal_entity = 3;
+        uint64 template_id = 4;
+    }
+    beget.bdrm.v1.structure.Administrator administrator = 5;
+    AuthoritativeNameServers authoritative_name_servers = 6;
+    beget.bdrm.v1.structure.Period period = 7;
+    bool enable_auto_renew = 8;
+    bool enable_private_person_status = 9;
 }
 
 message RegisterResponse {
@@ -94,9 +99,10 @@ message RegisterResponse {
         INVALID_DOMAIN = 0;
         DOMAIN_ALREADY_REGISTERED = 1;
         INVALID_ADMINISTRATOR = 2;
-        INVALID_NS_SERVERS = 3;
-        INVALID_PERIOD_FOR_TLD = 4;
-        NOT_ENOUGH_MONEY = 5;
+        TEMPLATE_NOT_FOUND = 3;
+        INVALID_NS_SERVERS = 4;
+        INVALID_PERIOD_FOR_TLD = 5;
+        NOT_ENOUGH_MONEY = 6;
     }
 }
 
